@@ -1,6 +1,7 @@
 from pyspark import SparkConf, SparkContext, RDD
 from pyspark.sql import SparkSession
 from pyspark.streaming import StreamingContext
+from pyspark.sql.functions import col
 
 def get_spark_context(on_server) -> SparkContext:
     spark_conf = SparkConf().setAppName("2ID70-MS2")
@@ -77,9 +78,17 @@ def q1(sc: SparkContext, on_server) -> RDD:
 
 def q2(spark_context: SparkContext, q1_rdd: RDD):
     spark_session = SparkSession(spark_context)
-    pass
+    #Create dataframe from RDD
+    df = spark_session.createDataFrame(q1_rdd.map(lambda r: r.split(",")), schema = ["relation", "attribute", "value"])
 
-    # TODO: Implement Q2 here.
+    #Q2_2
+    distinct_values = df.groupBy("relation", "attribute", "value").count()
+    q22 = distinct_values.groupBy("relation", "attribute") \
+                .count().alias("count") \
+                .where(col("count") >= 1000)
+
+    #Print results
+    print(">> [q22: " + str(q22.count()) + "]")
 
 
 def q3(spark_context: SparkContext, q1_rdd: RDD):
