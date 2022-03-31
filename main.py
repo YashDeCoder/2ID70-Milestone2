@@ -80,7 +80,14 @@ def q2(spark_context: SparkContext, q1_rdd: RDD):
     spark_session = SparkSession(spark_context)
     #Create dataframe from RDD
     df = spark_session.createDataFrame(q1_rdd.map(lambda r: r.split(",")), schema = ["relation", "attribute", "value"])
-
+    
+    #Q2_1
+    q21 = df.where("relation =='R'") \
+            .count()
+            
+    #Print results
+    print(">> [q21: " + str(q21) + "]")
+    
     #Q2_2
     distinct_values = df.groupBy("relation", "attribute", "value").count()
     q22 = distinct_values.groupBy("relation", "attribute") \
