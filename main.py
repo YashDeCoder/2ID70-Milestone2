@@ -11,6 +11,7 @@ def get_spark_context(on_server) -> SparkContext:
         spark_conf = spark_conf.setMaster("local[*]")
     return SparkContext.getOrCreate(spark_conf)
 
+
 def wc_flatmap(r):
     print("r", r)
     l = []
@@ -19,25 +20,27 @@ def wc_flatmap(r):
         l.append(word)
     return l
 
+
 def wc_mappingrdd(l):
     m = []
     for rec in range(0, len(l)):
         if l[rec] == "R":
-            records = l[rec].split(";") 
+            records = l[rec].split(";")
             numbers = l[rec].split(";")
             for (char, num) in zip(records, numbers):
                 m.append(l[rec] + "," + char + "," + num)
         if l[rec] == "S":
-            records = l[rec].split(";") 
+            records = l[rec].split(";")
             numbers = l[rec].split(";")
             for (char, num) in zip(records, numbers):
                 m.append(l[rec] + "," + char + "," + num)
         if l[rec] == "T":
-            records = l[rec].split(";") 
+            records = l[rec].split(";")
             numbers = l[rec].split(";")
             for (char, num) in zip(records, numbers):
                 m.append(l[rec] + "," + char + "," + num)
     return m
+
 
 def parse(row):
     records = []
@@ -55,22 +58,23 @@ def parse(row):
 
     return records
 
+
 def q1(sc: SparkContext, on_server) -> RDD:
     database_file_path = "/Database.csv" if on_server else "2ID70-2022-MS2-Data-Small\Database.csv"
 
     # TODO: You may change the value for the minPartitions parameter (template value 160) when running locally.
     # It is advised (but not compulsory) to set the value to 160 when running on the server.
     database_rdd = sc.textFile(database_file_path, 160)
-    
-    record_groups = database_rdd.map(lambda r: parse(r) if not "AttributeValue" in r else "")
+
+    record_groups = database_rdd.map(lambda r: parse(
+        r) if not "AttributeValue" in r else "")
     record_lines = record_groups.flatMap(lambda r: r)
     print(record_lines.take(10))
 
-    
     # TODO: Implement Q1 here by defining q1RDD based on databaseRDD.
-    
 
     q1_rdd = record_lines
+
     # print(">> [q1: R: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("R")).count()) + "]")
     # print(">> [q1: S: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("S")).count()) + "]")
     #print(">> [q1: T: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("T")).count()) + "]")
@@ -80,36 +84,52 @@ def q1(sc: SparkContext, on_server) -> RDD:
 
 def q2(spark_context: SparkContext, q1_rdd: RDD):
     spark_session = SparkSession(spark_context)
-    #Create dataframe from RDD
-    df = spark_session.createDataFrame(q1_rdd.map(lambda r: r.split(",")), schema = ["relation", "attribute", "value"])
-    
-    #Q2_1
-    q21 = df.where("relation =='R'") \
-            .count()
-                
-    #Q2_2
-    distinct_values = df.groupBy("relation", "attribute", "value").count()
-    q22 = distinct_values.groupBy("relation", "attribute") \
-                .count().alias("count") \
-                .where(col("count") >= 1000)
-    
-    #Q2_3
-    q23 = distinct_values.groupBy('relation', 'attribute') \
-                         .count().alias("count") \
-                         .orderBy("count", ascending=True)
-    q23 = q23.head(1)[0]
+    # Create dataframe from RDD
+    df = spark_session.createDataFrame(q1_rdd.map(lambda r: r.split(",")), schema=[
+                                       "relation", "attribute", "value"])
 
-                 
+    # # Q2_1
+    # q21 = df.where("relation =='R'") \
+    #         .count()
 
-    #Print results
-    print(">> [q21: " + str(q21) + "]")
-    print(">> [q22: " + str(q22.count()) + "]")
-    print(">> [q23: " + f"{q23.__getitem__('relation')}.{q23.__getitem__('attribute')[1]}" + "]")
+    # # Q2_2
+    # distinct_values = df.groupBy("relation", "attribute", "value").count()
+    # q22 = distinct_values.groupBy("relation", "attribute") \
+    #     .count().alias("count") \
+    #     .where(col("count") >= 1000)
+
+    # # Q2_3
+    # q23 = distinct_values.groupBy('relation', 'attribute') \
+    #                      .count().alias("count") \
+    #                      .orderBy("count", ascending=True)
+    # q23 = q23.head(1)[0]
+
+    # # Print results
+    # print(">> [q21: " + str(q21) + "]")
+    # print(">> [q22: " + str(q22.count()) + "]")
+    # print(
+    #     ">> [q23: " + f"{q23.__getitem__('relation')}.{q23.__getitem__('attribute')[1]}" + "]")
+
 
 def q3(spark_context: SparkContext, q1_rdd: RDD):
     spark_session = SparkSession(spark_context)
-    pass
+
+    # Create dataframe from RDD
+    df = spark_session.createDataFrame(q1_rdd.map(lambda r: r.split(",")), schema=[
+                                       "relation", "attribute", "value"])
+
     # TODO: Implement Q3 here.
+    # q3 = df.select("relation".alias("r1"), "attribute".alias("a1"), "relation".alias("r2"), "attribute".alias.("a2"))
+    # q3 = df.select("relation".alias("r1"), "attribute".alias("a1"), "relation".alias("r2"), "attribute".alias("a2"))\
+    #         .where("value" == )
+    # print(q3.take(10))
+    # for row in q3:
+    #     print(">> [q3: " + f"{q3.__getitem__('relation')}.{q3.__getitem__('attribute')[1]}" + "]")
+
+    # q3 = df.groupby("relation", "attributes")\
+    #         .where("value" != duplicates)
+    return q3
+    # TODO: Implement Q3 here
 
 
 def q4(spark_context: SparkContext, on_server):
