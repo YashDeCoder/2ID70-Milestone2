@@ -2,6 +2,8 @@ from pyspark import SparkConf, SparkContext, RDD
 from pyspark.sql import SparkSession
 from pyspark.streaming import StreamingContext
 from pyspark.sql.functions import col
+from pyspark.sql.functions import min as pspmin
+
 
 def get_spark_context(on_server) -> SparkContext:
     spark_conf = SparkConf().setAppName("2ID70-MS2")
@@ -69,9 +71,9 @@ def q1(sc: SparkContext, on_server) -> RDD:
     
 
     q1_rdd = record_lines
-    print(">> [q1: R: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("R")).count()) + "]")
-    print(">> [q1: S: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("S")).count()) + "]")
-    print(">> [q1: T: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("T")).count()) + "]")
+    # print(">> [q1: R: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("R")).count()) + "]")
+    # print(">> [q1: S: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("S")).count()) + "]")
+    #print(">> [q1: T: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("T")).count()) + "]")
 
     return q1_rdd
 
@@ -84,19 +86,25 @@ def q2(spark_context: SparkContext, q1_rdd: RDD):
     #Q2_1
     q21 = df.where("relation =='R'") \
             .count()
-            
-    #Print results
-    print(">> [q21: " + str(q21) + "]")
-    
+                
     #Q2_2
     distinct_values = df.groupBy("relation", "attribute", "value").count()
     q22 = distinct_values.groupBy("relation", "attribute") \
                 .count().alias("count") \
                 .where(col("count") >= 1000)
+    
+    #Q2_3
+    q23 = distinct_values.groupBy('relation', 'attribute') \
+                         .count().alias("count") \
+                         .orderBy("count", ascending=True)
+    q23 = q23.head(1)[0]
+
+                 
 
     #Print results
+    print(">> [q21: " + str(q21) + "]")
     print(">> [q22: " + str(q22.count()) + "]")
-
+    print(">> [q23: " + f"{q23.__getitem__('relation')}.{q23.__getitem__('attribute')[1]}" + "]")
 
 def q3(spark_context: SparkContext, q1_rdd: RDD):
     spark_session = SparkSession(spark_context)
