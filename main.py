@@ -8,7 +8,7 @@ from pyspark.sql.functions import min as pspmin
 def get_spark_context(on_server) -> SparkContext:
     spark_conf = SparkConf().setAppName("2ID70-MS2")
     if not on_server:
-        spark_conf = spark_conf.setMaster("local[*]")
+        spark_conf = spark_conf.setMaster("local[2]")
     return SparkContext.getOrCreate(spark_conf)
 
 def wc_flatmap(r):
@@ -114,19 +114,30 @@ def q3(spark_context: SparkContext, q1_rdd: RDD):
 
 def q4(spark_context: SparkContext, on_server):
 
-    pass
-    # streaming_context = StreamingContext(spark_context, 2)
-    # streaming_context.checkpoint("checkpoint")
+    streaming_context = StreamingContext(spark_context, 2)
+    streaming_context.checkpoint("checkpoint")
 
-    # hostname = "stream-host" if on_server else "localhost"
-    # lines = streaming_context.socketTextStream(hostname, 9000)
+    hostname = "stream-host" if on_server else "localhost"
+    lines = streaming_context.socketTextStream(hostname, 9000)
 
-    # # TODO: Implement Q4 here.
+    # TODO: Implement Q4 here.
+    #Get the total number of arrivals in the sliding window
+    total_count = lines.countByWindow(20, 4)
+    #Get the absolute frequencies of each ip in the sliding window
+    absolute_freqs = lines.map(lambda line: (line, 1)).reduceByKeyAndWindow(lambda a, b: a+b, lambda a, b: a-b, 20, 4)
+    #Combine both streams into one
+    joined = absolute_freqs.transformWith(lambda freq, total: freq.cartesian(total), total_count)
+    #Calculate the relative frequencies of each ip in the sliding window
+    relative_freqs = joined.map(lambda freq: (freq[0][0], freq[0][1]/freq[1])).filter(lambda freq: freq[1] > 0.03)
+    #Transform each pair into a correct output string
+    freq_strings = relative_freqs.map(lambda freq: ">> [q4: " + freq[0] + "," + str(freq[1]) + "]")
+    #Print the strings; there can't be more than 34 ip's with frequency > 3%, because 34*3% > 100%
+    freq_strings.pprint(num=34)
 
-    # # Start the streaming context, run it for two minutes or until termination
-    # streaming_context.start()
-    # streaming_context.awaitTerminationOrTimeout(2 * 60)
-    # streaming_context.stop()
+    # Start the streaming context, run it for two minutes or until termination
+    streaming_context.start()
+    streaming_context.awaitTerminationOrTimeout(2 * 60)
+    streaming_context.stop()
 
 
 # Main 'function' which initializes a Spark context and runs the code for each question.
