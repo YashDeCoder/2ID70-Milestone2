@@ -88,27 +88,27 @@ def q2(spark_context: SparkContext, q1_rdd: RDD):
     df = spark_session.createDataFrame(q1_rdd.map(lambda r: r.split(",")), schema=[
                                        "relation", "attribute", "value"])
 
-    # # Q2_1
-    # q21 = df.where("relation =='R'") \
-    #         .count()
+    # Q2_1
+    q21 = df.where("relation =='R'") \
+            .count()
 
-    # # Q2_2
-    # distinct_values = df.groupBy("relation", "attribute", "value").count()
-    # q22 = distinct_values.groupBy("relation", "attribute") \
-    #     .count().alias("count") \
-    #     .where(col("count") >= 1000)
+    # Q2_2
+    distinct_values = df.groupBy("relation", "attribute", "value").count()
+    q22 = distinct_values.groupBy("relation", "attribute") \
+        .count().alias("count") \
+        .where(col("count") >= 1000)
 
-    # # Q2_3
-    # q23 = distinct_values.groupBy('relation', 'attribute') \
-    #                      .count().alias("count") \
-    #                      .orderBy("count", ascending=True)
-    # q23 = q23.head(1)[0]
+    # Q2_3
+    q23 = distinct_values.groupBy('relation', 'attribute') \
+                         .count().alias("count") \
+                         .orderBy("count", ascending=True)
+    q23 = q23.head(1)[0]
 
-    # # Print results
-    # print(">> [q21: " + str(q21) + "]")
-    # print(">> [q22: " + str(q22.count()) + "]")
-    # print(
-    #     ">> [q23: " + f"{q23.__getitem__('relation')}.{q23.__getitem__('attribute')[1]}" + "]")
+    # Print results
+    print(">> [q21: " + str(q21) + "]")
+    print(">> [q22: " + str(q22.count()) + "]")
+    print(
+        ">> [q23: " + f"{q23.__getitem__('relation')}.{q23.__getitem__('attribute')[1]}" + "]")
 
 
 def q3(spark_context: SparkContext, q1_rdd: RDD):
@@ -125,9 +125,9 @@ def q3(spark_context: SparkContext, q1_rdd: RDD):
     # print(q3.take(10))
     # for row in q3:
     #     print(">> [q3: " + f"{q3.__getitem__('relation')}.{q3.__getitem__('attribute')[1]}" + "]")
-
-    # q3 = df.groupby("relation", "attributes")\
-    #         .where("value" != duplicates)
+    duplicates = df.exceptAll(df.dropDuplicates(['value']))
+    q3 = df.groupby("relation", "attributes")\
+            .where("value" != duplicates)
     return q3
     # TODO: Implement Q3 here
 
