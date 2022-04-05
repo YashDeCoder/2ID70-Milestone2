@@ -64,16 +64,12 @@ def q1(sc: SparkContext, on_server) -> RDD:
     
     record_groups = database_rdd.map(lambda r: parse(r) if not "AttributeValue" in r else "")
     record_lines = record_groups.flatMap(lambda r: r)
-    print(record_lines.take(10))
-
     
     # TODO: Implement Q1 here by defining q1RDD based on databaseRDD.
-    
-
     q1_rdd = record_lines
-    # print(">> [q1: R: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("R")).count()) + "]")
-    # print(">> [q1: S: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("S")).count()) + "]")
-    #print(">> [q1: T: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("T")).count()) + "]")
+    print(">> [q1: R: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("R")).count()) + "]")
+    print(">> [q1: S: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("S")).count()) + "]")
+    print(">> [q1: T: " + str(q1_rdd.filter(lambda r : r.split(",")[0].__eq__("T")).count()) + "]")
 
     return q1_rdd
 
@@ -108,8 +104,19 @@ def q2(spark_context: SparkContext, q1_rdd: RDD):
 
 def q3(spark_context: SparkContext, q1_rdd: RDD):
     spark_session = SparkSession(spark_context)
-    pass
-    # TODO: Implement Q3 here.
+
+    # TODO: Implement Q3 here
+    split = q1_rdd.map(lambda r: r.split(", ")).map(lambda r: ((r[0],r[1]),r[2])).groupByKey().mapValues(list)
+    relations = split.collect()
+    relationCount = len(relations)
+
+    for i in range(0, relationCount):
+        rel1 = relations[i][1]
+        for j in range(0, relationCount):
+            if i != j:
+                rel2 = relations[j][1]
+                if len(list(set(rel1) & set(rel2))) == len(list(set(rel1))):
+                    print(">> [q3: " + relations[i][0][0] + "." + relations[i][0][1] + "," + relations[j][0][0] + "." + relations[j][0][1] + "]")
 
 
 def q4(spark_context: SparkContext, on_server):
@@ -144,7 +151,7 @@ def q4(spark_context: SparkContext, on_server):
 # To skip executing a question while developing a solution, simply comment out the corresponding function call.
 if __name__ == '__main__':
 
-    on_server = False  # TODO: Set this to true if and only if running on the server
+    on_server = True  # TODO: Set this to true if and only if running on the server
 
     spark_context = get_spark_context(on_server)
 
